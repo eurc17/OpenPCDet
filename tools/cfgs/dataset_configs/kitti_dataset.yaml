@@ -1,7 +1,7 @@
 DATASET: 'KittiDataset'
 DATA_PATH: '../data/kitti'
 
-POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]
+POINT_CLOUD_RANGE: [-20, -40, -2.5, 50.4, 40, 1.5]
 
 DATA_SPLIT: {
     'train': train,
@@ -14,13 +14,13 @@ INFO_PATH: {
 }
 
 GET_ITEM_LIST: ["points"]
-FOV_POINTS_ONLY: True
+FOV_POINTS_ONLY: False
 
 DATA_AUGMENTOR:
     DISABLE_AUG_LIST: ['placeholder']
     AUG_CONFIG_LIST:
         - NAME: gt_sampling
-          USE_ROAD_PLANE: True
+          USE_ROAD_PLANE: False
           DB_INFO_PATH:
               - kitti_dbinfos_train.pkl
           PREPARE: {
@@ -32,7 +32,7 @@ DATA_AUGMENTOR:
           NUM_POINT_FEATURES: 4
           DATABASE_WITH_FAKELIDAR: False
           REMOVE_EXTRA_WIDTH: [0.0, 0.0, 0.0]
-          LIMIT_WHOLE_SCENE: True
+          LIMIT_WHOLE_SCENE: False
 
         - NAME: random_world_flip
           ALONG_AXIS_LIST: ['x']
