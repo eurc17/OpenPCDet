@@ -31,7 +31,7 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="convert wayside generated dataset to kitti bin & pkl format",
+        description="convert npy files to pcds",
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
