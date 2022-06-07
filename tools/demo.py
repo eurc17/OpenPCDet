@@ -1,6 +1,7 @@
 import argparse
 import glob
 from pathlib import Path
+import json
 
 try:
     import open3d
@@ -103,6 +104,14 @@ def parse_config():
         default=".bin",
         help="specify the extension of your point cloud data file",
     )
+    parser.add_argument(
+        "--draw_vis", action="store_true", help="Specify to draw visualization results"
+    )
+    parser.add_argument(
+        "--output_path",
+        type=str,
+        help="specify the output path of the bboxpvrcnn label",
+    )
 
     args = parser.parse_args()
 
@@ -141,9 +150,9 @@ def main():
             print("data loaded to gpu!")
             pred_dicts, _ = model.forward(data_dict)
             print("prediction ran!")
-            # print(pred_dicts[0]["pred_boxes"])
-            # print(pred_dicts[0]["pred_scores"])
-            # print(pred_dicts[0]["pred_labels"])
+            print(pred_dicts[0]["pred_boxes"])
+            print(pred_dicts[0]["pred_scores"])
+            print(pred_dicts[0]["pred_labels"])
             mask = (
                 (pred_dicts[0]["pred_boxes"][:, 0] != torch.inf)
                 & (pred_dicts[0]["pred_boxes"][:, 1] != torch.inf)
@@ -153,20 +162,58 @@ def main():
                 & (pred_dicts[0]["pred_boxes"][:, 5] != torch.inf)
                 & (pred_dicts[0]["pred_boxes"][:, 6] != torch.inf)
             )
-            # print(mask)
+            print(mask)
             pred_dicts[0]["pred_boxes"] = pred_dicts[0]["pred_boxes"][mask]
             pred_dicts[0]["pred_scores"] = pred_dicts[0]["pred_scores"][mask]
             pred_dicts[0]["pred_labels"] = pred_dicts[0]["pred_labels"][mask]
 
-            V.draw_scenes(
-                points=data_dict["points"][:, 1:],
-                ref_boxes=pred_dicts[0]["pred_boxes"],
-                ref_scores=pred_dicts[0]["pred_scores"],
-                ref_labels=pred_dicts[0]["pred_labels"],
+            if args.draw_vis:
+                V.draw_scenes(
+                    points=data_dict["points"][:, 1:],
+                    ref_boxes=pred_dicts[0]["pred_boxes"],
+                    ref_scores=pred_dicts[0]["pred_scores"],
+                    ref_labels=pred_dicts[0]["pred_labels"],
+                )
+
+                if not OPEN3D_FLAG:
+                    mlab.show(stop=True)
+
+            output_dict = dict()
+            output_dict["pred_boxes"] = (
+                pred_dicts[0]["pred_boxes"].cpu().detach().numpy()
+            )
+            output_dict["pred_scores"] = (
+                pred_dicts[0]["pred_scores"].cpu().detach().numpy()
+            )
+            output_dict["pred_labels"] = (
+                pred_dicts[0]["pred_labels"].cpu().detach().numpy()
             )
 
-            if not OPEN3D_FLAG:
-                mlab.show(stop=True)
+            output_dict["class_names"] = [
+                cfg.CLASS_NAMES[pred_label - 1]
+                for pred_label in output_dict["pred_labels"]
+            ]
+
+            print(output_dict)
+            bbox_list = list()
+            for (i, pred_box) in enumerate(output_dict["pred_boxes"]):
+                bbox_pvrcnn = dict()
+                bbox_pvrcnn["x"] = float(pred_box[0])
+                bbox_pvrcnn["y"] = float(pred_box[1])
+                bbox_pvrcnn["z"] = float(pred_box[2])
+                bbox_pvrcnn["dx"] = float(pred_box[3])
+                bbox_pvrcnn["dy"] = float(pred_box[4])
+                bbox_pvrcnn["dz"] = float(pred_box[5])
+                bbox_pvrcnn["heading"] = float(pred_box[6])
+                bbox_pvrcnn["score"] = float(output_dict["pred_scores"][i])
+                bbox_pvrcnn["label"] = float(output_dict["pred_labels"][i])
+                bbox_pvrcnn["cluster_id"] = i
+                bbox_pvrcnn["devices"] = []
+                bbox_pvrcnn["class_name"] = output_dict["class_names"][i]
+                bbox_list.append(bbox_pvrcnn)
+
+            with open(args.output_path, "w") as fp:
+                json.dump(bbox_list, fp, indent=4)
 
     logger.info("Demo done.")
 

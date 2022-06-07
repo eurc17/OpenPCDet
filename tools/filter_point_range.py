@@ -24,18 +24,43 @@ def filter_point(file_path):
     # print(points.shape)
 
 
+def get_min_max_height(file_path):
+    points = np.load(file_path)
+    points = points.reshape(-1, 4)
+    points_height = points[:, 2]
+    # print(points)
+    # print(points_height)
+    point_max_height = np.amax(points_height)
+    point_min_height = np.amin(points_height)
+
+    # print(point_max_height)
+    return (point_min_height, point_max_height)
+
+
 def main(args):
     global output_dir
     global limit_range
     limit_range = [-10, -9, -3, 42, 13, 2.8]
     output_dir = args.output_dir
 
+    # with ProcessPoolExecutor(max_workers=16) as executor:
+    #     executor.map(
+    #         filter_point,
+    #         sorted(glob.glob(args.input_dir + "/*npy")),
+    #         chunksize=1,
+    #     )
+
     with ProcessPoolExecutor(max_workers=16) as executor:
-        executor.map(
-            filter_point,
+        ret = executor.map(
+            get_min_max_height,
             sorted(glob.glob(args.input_dir + "/*npy")),
             chunksize=1,
         )
+    list_min_max = list(map(list, zip(*list(ret))))
+    list_min = list_min_max[0]
+    list_max = list_min_max[1]
+    print(np.amin(list_min))
+    print(np.amax(list_max))
 
 
 if __name__ == "__main__":
