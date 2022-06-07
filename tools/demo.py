@@ -2,6 +2,7 @@ import argparse
 import glob
 from pathlib import Path
 import json
+import os
 
 try:
     import open3d
@@ -68,7 +69,12 @@ class DemoDataset(DatasetTemplate):
                 self.sample_file_list[index], dtype=np.float32
             ).reshape(-1, 4)
         elif self.ext == ".npy":
-            points = np.load(self.sample_file_list[index])
+            # print(self.sample_file_list[index])
+            # points = np.load(self.sample_file_list[index])
+            points = np.fromfile(
+                self.sample_file_list[index], dtype=np.float32
+            ).reshape(-1, 4)
+            # print(points)
         else:
             raise NotImplementedError
 
@@ -101,16 +107,16 @@ def parse_config():
     parser.add_argument(
         "--ext",
         type=str,
-        default=".bin",
+        default=".npy",
         help="specify the extension of your point cloud data file",
     )
     parser.add_argument(
         "--draw_vis", action="store_true", help="Specify to draw visualization results"
     )
     parser.add_argument(
-        "--output_path",
+        "--output_dir",
         type=str,
-        help="specify the output path of the bboxpvrcnn label",
+        help="specify the output directory of the bboxpvrcnn labels",
     )
 
     args = parser.parse_args()
@@ -141,18 +147,18 @@ def main():
     model.cuda()
     model.eval()
     with torch.no_grad():
+        # print(demo_dataset[0])
         for idx, data_dict in enumerate(demo_dataset):
             logger.info(f"Visualized sample index: \t{idx + 1}")
             data_dict = demo_dataset.collate_batch([data_dict])
             print("batch collated!")
-            print(data_dict)
             load_data_to_gpu(data_dict)
             print("data loaded to gpu!")
             pred_dicts, _ = model.forward(data_dict)
             print("prediction ran!")
-            print(pred_dicts[0]["pred_boxes"])
-            print(pred_dicts[0]["pred_scores"])
-            print(pred_dicts[0]["pred_labels"])
+            # print(pred_dicts[0]["pred_boxes"])
+            # print(pred_dicts[0]["pred_scores"])
+            # print(pred_dicts[0]["pred_labels"])
             mask = (
                 (pred_dicts[0]["pred_boxes"][:, 0] != torch.inf)
                 & (pred_dicts[0]["pred_boxes"][:, 1] != torch.inf)
@@ -162,7 +168,7 @@ def main():
                 & (pred_dicts[0]["pred_boxes"][:, 5] != torch.inf)
                 & (pred_dicts[0]["pred_boxes"][:, 6] != torch.inf)
             )
-            print(mask)
+            # print(mask)
             pred_dicts[0]["pred_boxes"] = pred_dicts[0]["pred_boxes"][mask]
             pred_dicts[0]["pred_scores"] = pred_dicts[0]["pred_scores"][mask]
             pred_dicts[0]["pred_labels"] = pred_dicts[0]["pred_labels"][mask]
@@ -194,7 +200,7 @@ def main():
                 for pred_label in output_dict["pred_labels"]
             ]
 
-            print(output_dict)
+            # print(output_dict)
             bbox_list = list()
             for (i, pred_box) in enumerate(output_dict["pred_boxes"]):
                 bbox_pvrcnn = dict()
@@ -206,13 +212,20 @@ def main():
                 bbox_pvrcnn["dz"] = float(pred_box[5])
                 bbox_pvrcnn["heading"] = float(pred_box[6])
                 bbox_pvrcnn["score"] = float(output_dict["pred_scores"][i])
-                bbox_pvrcnn["label"] = float(output_dict["pred_labels"][i])
+                bbox_pvrcnn["label"] = int(output_dict["pred_labels"][i])
                 bbox_pvrcnn["cluster_id"] = i
                 bbox_pvrcnn["devices"] = []
                 bbox_pvrcnn["class_name"] = output_dict["class_names"][i]
                 bbox_list.append(bbox_pvrcnn)
 
-            with open(args.output_path, "w") as fp:
+            print(demo_dataset.sample_file_list[idx])
+            file_stem = os.path.basename(demo_dataset.sample_file_list[idx]).split(".")[
+                0
+            ]
+
+            output_path = args.output_dir + "/" + file_stem + ".json"
+
+            with open(output_path, "w") as fp:
                 json.dump(bbox_list, fp, indent=4)
 
     logger.info("Demo done.")
