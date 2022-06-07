@@ -6,7 +6,7 @@ authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
-numpy = "<1.22.2"
+numpy = "^1.21.1"
 llvmlite = "^0.38.1"
 numba = "^0.55.1"
 torch = "1.10"
@@ -16,7 +16,7 @@ scikit-image = "^0.19.2"
 tqdm = "^4.64.0"
 tensorboardX = "^2.5"
 ptflops = "^0.6.8"
-open3d =  "^0.15.0"
+open3d =  "^0.13.0"
 ninja = "^1.10.2"
 
 [tool.poetry.dev-dependencies]
