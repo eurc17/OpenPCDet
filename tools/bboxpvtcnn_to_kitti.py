@@ -170,7 +170,7 @@ def main(args):
                     pred_labels_list.append(object["label"])
 
             else:
-                pred_labels_list.append(object["label"])
+                continue
             box = []
             box.append(object["x"])
             box.append(object["y"])
@@ -189,9 +189,14 @@ def main(args):
         box_dict["pred_boxes"] = pred_boxes
         box_dict["pred_labels"] = pred_labels
 
-        kitti_pred_dict = generate_single_label_with_score(
-            box_dict, calib, ["Car", "Car", "Car"]
-        )
+        if args.merge_class:
+            kitti_pred_dict = generate_single_label_with_score(
+                box_dict, calib, ["Car", "Car", "Car"]
+            )
+        else:
+            kitti_pred_dict = generate_single_label_with_score(
+                box_dict, calib, ["Car", "Truck", "Cyclist"]
+            )
 
         # print(kitti_pred_dict)
         frame_id = "{:06d}".format(i)
@@ -279,6 +284,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--add_score", action="store_true", help="To write the score or not"
+    )
+    parser.add_argument(
+        "--merge_class", action="store_true", help="Merge all class into car"
     )
 
     args = parser.parse_args()
