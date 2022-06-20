@@ -37,7 +37,50 @@ def get_thresholds(scores: np.ndarray, num_gt, num_sample_pts=41):
     return thresholds
 
 
-def clean_data(gt_anno, dt_anno, current_class, difficulty):
+def point_in_range(point, limit_range):
+    if (
+        point[0] >= limit_range[0]
+        and point[0] <= limit_range[3]
+        and point[1] >= limit_range[1]
+        and point[1] <= limit_range[4]
+    ):
+        return True
+    else:
+        return False
+
+
+def is_within_difficulty(bbox3d, difficulty):
+    # 0 - easy, 1 - moderate, 2 - hard
+    box_difficulty = -1
+    center_x = bbox3d[0]
+    center_y = bbox3d[1]
+    center_z = bbox3d[2]
+    center_point = list()
+    center_point.append(center_x)
+    center_point.append(center_y)
+    center_point.append(center_z)
+    # todo: Make this sync with config
+    limit_range_h1m_shrink = [-9, -8, -3, 41, 12, 2.8]  # horizontal 1 meter shrink
+    limit_range_hard = [-10, -9, -3, -5, -3, 2.8]
+    limit_range_moder = [30, -9, -3, 42, 13, 2.8]
+
+    if not (point_in_range(center_point, limit_range_h1m_shrink)):
+        box_difficulty = 2
+    elif point_in_range(center_point, limit_range_hard):
+        box_difficulty = 2
+    elif point_in_range(center_point, limit_range_moder):
+        box_difficulty = 1
+    else:
+        box_difficulty = 0
+    if box_difficulty == difficulty:
+        return True
+    else:
+        if box_difficulty == -1:
+            print("box_difficulty not updated")
+        return False
+
+
+def clean_data(gt_anno, dt_anno, current_class, difficulty, calib):
     CLASS_NAMES = ["car", "pedestrian", "cyclist", "van", "person_sitting", "truck"]
     MIN_HEIGHT = [40, 25, 25]
     MAX_OCCLUSION = [0, 1, 2]
@@ -47,6 +90,18 @@ def clean_data(gt_anno, dt_anno, current_class, difficulty):
     num_gt = len(gt_anno["name"])
     num_dt = len(dt_anno["name"])
     num_valid_gt = 0
+    # calculate 3d bbox
+    # print(gt_anno)
+    loc_3d = gt_anno["location"]
+    dims_3d = gt_anno["dimensions"]
+    rots_3d = gt_anno["rotation_y"]
+    loc_lidar = calib.rect_to_lidar(loc_3d)
+    l, h, w = dims_3d[:, 0:1], dims_3d[:, 1:2], dims_3d[:, 2:3]
+    loc_lidar[:, 2] += h[:, 0] / 2
+    gt_boxes_lidar = np.concatenate(
+        [loc_lidar, l, w, h, -(np.pi / 2 + rots_3d[..., np.newaxis])], axis=1
+    )
+    # print(gt_boxes_lidar)
     for i in range(num_gt):
         bbox = gt_anno["bbox"][i]
         gt_name = gt_anno["name"][i].lower()
@@ -64,6 +119,10 @@ def clean_data(gt_anno, dt_anno, current_class, difficulty):
         else:
             valid_class = -1
         ignore = False
+        if not is_within_difficulty(
+            gt_boxes_lidar[i], difficulty
+        ):  # applies self defined difficulty
+            ignore = True
         if (
             (gt_anno["occluded"][i] > MAX_OCCLUSION[difficulty])
             or (gt_anno["truncated"][i] > MAX_TRUNCATION[difficulty])
@@ -513,14 +572,14 @@ def calculate_iou_partly(gt_annos, dt_annos, metric, calib, num_parts=50):
     return overlaps, parted_overlaps, total_gt_num, total_dt_num
 
 
-def _prepare_data(gt_annos, dt_annos, current_class, difficulty):
+def _prepare_data(gt_annos, dt_annos, current_class, difficulty, calib):
     gt_datas_list = []
     dt_datas_list = []
     total_dc_num = []
     ignored_gts, ignored_dets, dontcares = [], [], []
     total_num_valid_gt = 0
     for i in range(len(gt_annos)):
-        rets = clean_data(gt_annos[i], dt_annos[i], current_class, difficulty)
+        rets = clean_data(gt_annos[i], dt_annos[i], current_class, difficulty, calib)
         num_valid_gt, ignored_gt, ignored_det, dc_bboxes = rets
         ignored_gts.append(np.array(ignored_gt, dtype=np.int64))
         ignored_dets.append(np.array(ignored_det, dtype=np.int64))
@@ -595,7 +654,7 @@ def eval_class(
     aos = np.zeros([num_class, num_difficulty, num_minoverlap, N_SAMPLE_PTS])
     for m, current_class in enumerate(current_classes):
         for l, difficulty in enumerate(difficultys):
-            rets = _prepare_data(gt_annos, dt_annos, current_class, difficulty)
+            rets = _prepare_data(gt_annos, dt_annos, current_class, difficulty, calib)
             (
                 gt_datas_list,
                 dt_datas_list,
