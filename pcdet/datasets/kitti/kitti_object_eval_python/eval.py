@@ -60,15 +60,22 @@ def is_within_difficulty(bbox3d, difficulty):
     center_point.append(center_y)
     center_point.append(center_z)
     # todo: Make this sync with config
-    limit_range_h1m_shrink = [-9, -8, -3, 41, 12, 2.8]  # horizontal 1 meter shrink
-    limit_range_hard = [-10, -9, -3, -5, -3, 2.8]
-    limit_range_moder = [30, -9, -3, 42, 13, 2.8]
+    # limit_range_h1m_shrink = [-9, -8, -3, 41, 12, 2.8]  # horizontal 1 meter shrink
+    # limit_range_hard = [-10, -9, -3, -7, -7, 2.8]
+    # limit_range_moder = [30, -9, -3, 42, 13, 2.8]
+    distance_to_lidar1 = (center_x**2 + center_y**2 + center_z**2) ** 0.5
 
-    if not (point_in_range(center_point, limit_range_h1m_shrink)):
+    # if not (point_in_range(center_point, limit_range_h1m_shrink)):
+    #     box_difficulty = 1
+    # # elif point_in_range(center_point, limit_range_hard):
+    # #     box_difficulty = 2
+    # elif point_in_range(center_point, limit_range_moder):
+    #     box_difficulty = 1
+    # else:
+    #     box_difficulty = 0
+    if distance_to_lidar1 >= 40:
         box_difficulty = 2
-    elif point_in_range(center_point, limit_range_hard):
-        box_difficulty = 2
-    elif point_in_range(center_point, limit_range_moder):
+    elif distance_to_lidar1 >= 30:
         box_difficulty = 1
     else:
         box_difficulty = 0
