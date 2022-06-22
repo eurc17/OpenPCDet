@@ -128,6 +128,8 @@ def parse_config():
 
 def main():
     args, cfg = parse_config()
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
     logger = common_utils.create_logger()
     logger.info("-----------------Quick Demo of OpenPCDet-------------------------")
     demo_dataset = DemoDataset(
