@@ -51,6 +51,12 @@ def point_in_range(point, limit_range):
 
 def is_within_difficulty(bbox3d, difficulty):
     # 0 - easy, 1 - moderate, 2 - hard
+    global id_lidar
+    LIDAR_POSITION = [
+        [0.0, 0.0, 0.0],
+        [-1.79866983, 14.17190021, -0.88428853],
+        [46.57604993, 12.18958475, 0.91504998],
+    ]
     box_difficulty = -1
     center_x = bbox3d[0]
     center_y = bbox3d[1]
@@ -63,7 +69,12 @@ def is_within_difficulty(bbox3d, difficulty):
     # limit_range_h1m_shrink = [-9, -8, -3, 41, 12, 2.8]  # horizontal 1 meter shrink
     # limit_range_hard = [-10, -9, -3, -7, -7, 2.8]
     # limit_range_moder = [30, -9, -3, 42, 13, 2.8]
-    distance_to_lidar1 = (center_x**2 + center_y**2 + center_z**2) ** 0.5
+    lidar_pos = LIDAR_POSITION[id_lidar - 1]
+    distance_to_lidar = (
+        (center_x - lidar_pos[0]) ** 2
+        + (center_y - lidar_pos[1]) ** 2
+        + (center_z - lidar_pos[2]) ** 2
+    ) ** 0.5
 
     # if not (point_in_range(center_point, limit_range_h1m_shrink)):
     #     box_difficulty = 1
@@ -73,9 +84,9 @@ def is_within_difficulty(bbox3d, difficulty):
     #     box_difficulty = 1
     # else:
     #     box_difficulty = 0
-    if distance_to_lidar1 >= 40:
+    if distance_to_lidar >= 40:
         box_difficulty = 2
-    elif distance_to_lidar1 >= 30:
+    elif distance_to_lidar >= 30:
         box_difficulty = 1
     else:
         box_difficulty = 0
@@ -861,8 +872,10 @@ def do_coco_style_eval(
 
 
 def get_official_eval_result(
-    gt_annos, dt_annos, current_classes, calib, PR_detail_dict=None
+    gt_annos, dt_annos, current_classes, calib, lidar_id=1, PR_detail_dict=None
 ):
+    global id_lidar
+    id_lidar = lidar_id
     overlap_0_7 = np.array(
         [
             [0.7, 0.5, 0.5, 0.7, 0.5, 0.7],
@@ -1063,7 +1076,9 @@ def get_official_eval_result(
     return result, ret_dict
 
 
-def get_coco_eval_result(gt_annos, dt_annos, current_classes):
+def get_coco_eval_result(gt_annos, dt_annos, current_classes, lidar_id=1):
+    global id_lidar
+    id_lidar = lidar_id
     class_to_name = {
         0: "Car",
         1: "Pedestrian",

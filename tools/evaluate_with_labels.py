@@ -33,9 +33,13 @@ def evaluate(
         dt_annos = kitti.filter_annos_low_score(dt_annos, score_thresh)
     gt_annos = kitti.get_label_annos(label_path)
     if coco:
-        return get_coco_eval_result(gt_annos, dt_annos, current_class, calib)
+        return get_coco_eval_result(
+            gt_annos, dt_annos, current_class, calib, lidar_id=args.lidar_id
+        )
     else:
-        return get_official_eval_result(gt_annos, dt_annos, current_class, calib)
+        return get_official_eval_result(
+            gt_annos, dt_annos, current_class, calib, lidar_id=args.lidar_id
+        )
 
 
 def main(args):
@@ -71,6 +75,14 @@ if __name__ == "__main__":
         type=str,
         required=True,
         help="Path to the calibration file",
+    )
+    parser.add_argument(
+        "-l",
+        "--lidar_id",
+        type=int,
+        required=True,
+        choices=range(1, 4),
+        help="Select the wayside lidar to evaluate, this is used for difficulty separation",
     )
 
     args = parser.parse_args()
