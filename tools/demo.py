@@ -128,8 +128,9 @@ def parse_config():
 
 def main():
     args, cfg = parse_config()
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
+    if args.output_dir != None:
+        if not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
     logger = common_utils.create_logger()
     logger.info("-----------------Quick Demo of OpenPCDet-------------------------")
     demo_dataset = DemoDataset(
@@ -225,10 +226,11 @@ def main():
                 0
             ]
 
-            output_path = args.output_dir + "/" + file_stem + ".json"
+            if args.output_dir != None:
+                output_path = args.output_dir + "/" + file_stem + ".json"
 
-            with open(output_path, "w") as fp:
-                json.dump(bbox_list, fp, indent=4)
+                with open(output_path, "w") as fp:
+                    json.dump(bbox_list, fp, indent=4)
 
     logger.info("Demo done.")
 

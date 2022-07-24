@@ -7,6 +7,8 @@ import argparse
 import os
 from pcdet.utils import calibration_kitti
 from pathlib import Path
+import json
+import glob
 
 
 def get_calib(calib_file):
@@ -32,6 +34,22 @@ def evaluate(
     if score_thresh > 0:
         dt_annos = kitti.filter_annos_low_score(dt_annos, score_thresh)
     gt_annos = kitti.get_label_annos(label_path)
+
+    if args.gt_label_bboxpvrcnn_dir is not None:
+        for i, gt_label_pvrcnn_path in enumerate(
+            sorted(glob.glob(args.gt_label_bboxpvrcnn_dir + "/*.json"))
+        ):
+            with open(gt_label_pvrcnn_path, "r") as fp:
+                gt_label_pvrcnn = json.load(fp)
+            assert len(gt_label_pvrcnn) == len(gt_annos[i]["name"])
+            for obj in gt_label_pvrcnn:
+                if not "difficulty" in gt_annos[i]:
+                    gt_annos[i]["difficulty"] = list()
+                if "difficulty" in obj:
+                    gt_annos[i]["difficulty"].append(obj["difficulty"])
+                else:
+                    gt_annos[i]["difficulty"].append(-1)
+
     if coco:
         return get_coco_eval_result(
             gt_annos, dt_annos, current_class, calib, lidar_id=args.lidar_id
@@ -70,6 +88,12 @@ if __name__ == "__main__":
         help="the path to the directory storing gt labels",
     )
     parser.add_argument(
+        "-b",
+        "--gt_label_bboxpvrcnn_dir",
+        type=str,
+        help="the path to the directory storing gt labels in bboxpvrcnn format, used for reading difficulty level",
+    )
+    parser.add_argument(
         "-c",
         "--calib_file_path",
         type=str,
@@ -97,5 +121,11 @@ if __name__ == "__main__":
 
     if not os.path.isdir(args.gt_label_dir):
         print("gt_label_dir is not a directory!")
+
+    if not os.path.exists(args.gt_label_bboxpvrcnn_dir):
+        print("gt_label_bboxpvrcnn_dir doesn't exists!")
+
+    if not os.path.isdir(args.gt_label_bboxpvrcnn_dir):
+        print("gt_label_bboxpvrcnn_dir is not a directory!")
 
     main(args)

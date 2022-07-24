@@ -137,10 +137,16 @@ def clean_data(gt_anno, dt_anno, current_class, difficulty, calib):
         else:
             valid_class = -1
         ignore = False
-        if not is_within_difficulty(
-            gt_boxes_lidar[i], difficulty
-        ):  # applies self defined difficulty
-            ignore = True
+        if not "difficulty" in gt_anno:
+            if not is_within_difficulty(
+                gt_boxes_lidar[i], difficulty
+            ):  # applies self defined difficulty
+                ignore = True
+        else:
+            # use difficulty recoreded in gt_anno
+            print("Using difficulty in label")
+            if gt_anno["difficulty"][i] != difficulty:
+                ignore = True
         if (
             (gt_anno["occluded"][i] > MAX_OCCLUSION[difficulty])
             or (gt_anno["truncated"][i] > MAX_TRUNCATION[difficulty])
@@ -642,7 +648,7 @@ def eval_class(
     min_overlaps,
     calib,
     compute_aos=False,
-    num_parts=100,
+    num_parts=200,
 ):
     """Kitti eval. support 2d/bev/3d/aos eval. support 0.5:0.05:0.95 coco AP.
     Args:

@@ -120,26 +120,34 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if not os.path.exists(args.input_dir):
         print("input_dir doesn't exists!")
+        exit(1)
 
     if not os.path.isdir(args.input_dir):
         print("input_dir is not a directory!")
+        exit(1)
 
     if not os.path.exists(args.cfg_file):
         print("cfg_file doesn't exists!")
+        exit(1)
 
     if not os.path.isfile(args.cfg_file):
         print("cfg_file is not a file!")
+        exit(1)
 
     if not os.path.exists(args.ckpt):
         print("ckpt doesn't exists!")
+        exit(1)
 
     if not os.path.isfile(args.ckpt):
         print("ckpt is not a file!")
+        exit(1)
 
     if not os.path.exists(args.calib_file):
         print("calib_file doesn't exists!")
+        exit(1)
 
     if not os.path.isfile(args.calib_file):
         print("calib_file is not a file!")
+        exit(1)
 
     main(args)
