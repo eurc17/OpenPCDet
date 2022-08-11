@@ -3,6 +3,7 @@ import glob
 from pathlib import Path
 import json
 import os
+from tqdm import tqdm
 
 try:
     import open3d
@@ -152,13 +153,13 @@ def main():
     with torch.no_grad():
         # print(demo_dataset[0])
         for idx, data_dict in enumerate(demo_dataset):
-            logger.info(f"Visualized sample index: \t{idx + 1}")
+            # logger.info(f"Visualized sample index: \t{idx + 1}")
             data_dict = demo_dataset.collate_batch([data_dict])
-            print("batch collated!")
+            # print("batch collated!")
             load_data_to_gpu(data_dict)
-            print("data loaded to gpu!")
+            # print("data loaded to gpu!")
             pred_dicts, _ = model.forward(data_dict)
-            print("prediction ran!")
+            # print("prediction ran!")
             # print(pred_dicts[0]["pred_boxes"])
             # print(pred_dicts[0]["pred_scores"])
             # print(pred_dicts[0]["pred_labels"])
@@ -205,7 +206,7 @@ def main():
 
             # print(output_dict)
             bbox_list = list()
-            for (i, pred_box) in enumerate(output_dict["pred_boxes"]):
+            for (i, pred_box) in enumerate(tqdm(output_dict["pred_boxes"])):
                 bbox_pvrcnn = dict()
                 bbox_pvrcnn["x"] = float(pred_box[0])
                 bbox_pvrcnn["y"] = float(pred_box[1])
@@ -221,7 +222,7 @@ def main():
                 bbox_pvrcnn["class_name"] = output_dict["class_names"][i]
                 bbox_list.append(bbox_pvrcnn)
 
-            print(demo_dataset.sample_file_list[idx])
+            # print(demo_dataset.sample_file_list[idx])
             file_stem = os.path.basename(demo_dataset.sample_file_list[idx]).split(".")[
                 0
             ]
