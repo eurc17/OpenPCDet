@@ -19,7 +19,9 @@ def main(args):
     )
     print("Input dir length = ", input_dir_len)
     model_name = os.path.basename(args.cfg_file).split(".")[0]
-    inference_folder_name = "eval2_{}_lidar{}".format(model_name, args.lidar_select)
+    inference_folder_name = "eval2_with_gen_{}_lidar{}".format(
+        model_name, args.lidar_select
+    )
     output_dir_inference = "./official_transform/wayside_labels/{}".format(
         inference_folder_name
     )

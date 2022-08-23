@@ -152,7 +152,7 @@ def main():
     model.eval()
     with torch.no_grad():
         # print(demo_dataset[0])
-        for idx, data_dict in enumerate(demo_dataset):
+        for idx, data_dict in enumerate(tqdm(demo_dataset)):
             # logger.info(f"Visualized sample index: \t{idx + 1}")
             data_dict = demo_dataset.collate_batch([data_dict])
             # print("batch collated!")
@@ -206,7 +206,7 @@ def main():
 
             # print(output_dict)
             bbox_list = list()
-            for (i, pred_box) in enumerate(tqdm(output_dict["pred_boxes"])):
+            for (i, pred_box) in enumerate((output_dict["pred_boxes"])):
                 bbox_pvrcnn = dict()
                 bbox_pvrcnn["x"] = float(pred_box[0])
                 bbox_pvrcnn["y"] = float(pred_box[1])

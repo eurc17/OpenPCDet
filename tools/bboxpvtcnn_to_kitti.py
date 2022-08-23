@@ -151,6 +151,7 @@ def main(args):
     for i, wayside_label_path in enumerate(
         sorted(glob.glob(args.input_dir + "/*.json"))
     ):
+        print(wayside_label_path)
         box_dict = dict()
         pred_scores_list = list()
         pred_boxes_list = list()
@@ -167,7 +168,8 @@ def main(args):
                 elif object["class_name"] == "Cyclist":
                     pred_labels_list.append(3)
                 else:
-                    pred_labels_list.append(object["label"])
+                    # print(object["class_name"])
+                    pred_labels_list.append(1)
 
             else:
                 continue
@@ -190,12 +192,18 @@ def main(args):
         box_dict["pred_labels"] = pred_labels
 
         if args.merge_class:
+            print("Merged class")
             kitti_pred_dict = generate_single_label_with_score(
                 box_dict, calib, ["Car", "Car", "Car"]
             )
         else:
             kitti_pred_dict = generate_single_label_with_score(
-                box_dict, calib, ["Car", "Truck", "Cyclist"]
+                box_dict,
+                calib,
+                ["Car", "Truck", "Cyclist"]
+                # box_dict,
+                # calib,
+                # ["Cyclist", "Car", "Truck", "SemiTruck", "Pickup", "Other", "Unknown"],
             )
 
         # print(kitti_pred_dict)

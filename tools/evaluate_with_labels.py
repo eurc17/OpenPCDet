@@ -34,6 +34,7 @@ def evaluate(
     if score_thresh > 0:
         dt_annos = kitti.filter_annos_low_score(dt_annos, score_thresh)
     gt_annos = kitti.get_label_annos(label_path)
+    cnt = 0
 
     if args.gt_label_bboxpvrcnn_dir is not None:
         for i, gt_label_pvrcnn_path in enumerate(
@@ -47,8 +48,12 @@ def evaluate(
                     gt_annos[i]["difficulty"] = list()
                 if "difficulty" in obj:
                     gt_annos[i]["difficulty"].append(obj["difficulty"])
+                    if obj["difficulty"] == 2:
+                        print("2")
+                        cnt += 1
                 else:
                     gt_annos[i]["difficulty"].append(-1)
+    print("cnt = ", cnt)
 
     if coco:
         return get_coco_eval_result(
@@ -105,7 +110,7 @@ if __name__ == "__main__":
         "--lidar_id",
         type=int,
         required=True,
-        choices=range(1, 4),
+        choices=range(0, 4),
         help="Select the wayside lidar to evaluate, this is used for difficulty separation",
     )
 
@@ -122,10 +127,11 @@ if __name__ == "__main__":
     if not os.path.isdir(args.gt_label_dir):
         print("gt_label_dir is not a directory!")
 
-    if not os.path.exists(args.gt_label_bboxpvrcnn_dir):
-        print("gt_label_bboxpvrcnn_dir doesn't exists!")
+    if args.gt_label_bboxpvrcnn_dir is not None:
+        if not os.path.exists(args.gt_label_bboxpvrcnn_dir):
+            print("gt_label_bboxpvrcnn_dir doesn't exists!")
 
-    if not os.path.isdir(args.gt_label_bboxpvrcnn_dir):
-        print("gt_label_bboxpvrcnn_dir is not a directory!")
+        if not os.path.isdir(args.gt_label_bboxpvrcnn_dir):
+            print("gt_label_bboxpvrcnn_dir is not a directory!")
 
     main(args)

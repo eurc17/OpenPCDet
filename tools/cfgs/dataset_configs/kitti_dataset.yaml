@@ -2,6 +2,8 @@ DATASET: 'KittiDataset'
 DATA_PATH: '../data/kitti'
 
 POINT_CLOUD_RANGE: [-20, -40, -3.0, 50.4, 40, 1.0] # pvrcnn needs z to be from -3.0 to 1.0
+# POINT_CLOUD_RANGE: [-20, -40, -2.5, 50.4, 40, 1.5] # pvrcnn needs z to be from -3.0 to 1.0
+
 
 DATA_SPLIT: {
     'train': train,

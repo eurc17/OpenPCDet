@@ -50,6 +50,7 @@ def point_in_range(point, limit_range):
 
 
 def is_within_difficulty(bbox3d, difficulty):
+    global count
     # 0 - easy, 1 - moderate, 2 - hard
     global id_lidar
     LIDAR_POSITION = [
@@ -57,6 +58,8 @@ def is_within_difficulty(bbox3d, difficulty):
         [-1.79866983, 14.17190021, -0.88428853],
         [46.57604993, 12.18958475, 0.91504998],
     ]
+    if id_lidar == 0:
+        return True
     box_difficulty = -1
     center_x = bbox3d[0]
     center_y = bbox3d[1]
@@ -70,10 +73,11 @@ def is_within_difficulty(bbox3d, difficulty):
     # limit_range_hard = [-10, -9, -3, -7, -7, 2.8]
     # limit_range_moder = [30, -9, -3, 42, 13, 2.8]
     lidar_pos = LIDAR_POSITION[id_lidar - 1]
+    # print(lidar_pos)
     distance_to_lidar = (
-        (center_x - lidar_pos[0]) ** 2
-        + (center_y - lidar_pos[1]) ** 2
-        + (center_z - lidar_pos[2]) ** 2
+        abs(center_x - lidar_pos[0]) ** 2
+        + abs(center_y - lidar_pos[1]) ** 2
+        + abs(center_z - lidar_pos[2]) ** 2
     ) ** 0.5
 
     # if not (point_in_range(center_point, limit_range_h1m_shrink)):
@@ -85,6 +89,10 @@ def is_within_difficulty(bbox3d, difficulty):
     # else:
     #     box_difficulty = 0
     if distance_to_lidar >= 40:
+        # print(center_x, center_y, center_z)
+        # print(distance_to_lidar)
+        count += 1
+        print(count)
         box_difficulty = 2
     elif distance_to_lidar >= 30:
         box_difficulty = 1
@@ -144,7 +152,7 @@ def clean_data(gt_anno, dt_anno, current_class, difficulty, calib):
                 ignore = True
         else:
             # use difficulty recoreded in gt_anno
-            print("Using difficulty in label")
+            # print("Using difficulty in label")
             if gt_anno["difficulty"][i] != difficulty:
                 ignore = True
         if (
@@ -597,6 +605,8 @@ def calculate_iou_partly(gt_annos, dt_annos, metric, calib, num_parts=50):
 
 
 def _prepare_data(gt_annos, dt_annos, current_class, difficulty, calib):
+    global count
+    count = 0
     gt_datas_list = []
     dt_datas_list = []
     total_dc_num = []
@@ -903,8 +913,15 @@ def get_official_eval_result(
             [0.3, 0.25, 0.25, 0.5, 0.25, 0.5],
         ]
     )
+    overlap_0_25 = np.array(
+        [
+            [0.5, 0.5, 0.5, 0.7, 0.5, 0.5],
+            [0.25, 0.25, 0.25, 0.5, 0.25, 0.5],
+            [0.25, 0.25, 0.25, 0.5, 0.25, 0.5],
+        ]
+    )
     min_overlaps = np.stack(
-        [overlap_0_7, overlap_0_5, overlap_0_3], axis=0
+        [overlap_0_7, overlap_0_5, overlap_0_3, overlap_0_25], axis=0
     )  # [2, 3, 5]
     class_to_name = {
         0: "Car",
